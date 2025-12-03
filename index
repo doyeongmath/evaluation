@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025학년도 학기말 분할점수 조회</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --bg-color: #f8f9fa;
+            --border-color: #ddd;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .tab-btn:hover {
+            color: var(--secondary-color);
+            background-color: #f1f1f1;
+        }
+
+        .tab-btn.active {
+            color: white;
+            background-color: var(--secondary-color);
+        }
+
+        /* Filter */
+        .filter-section {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 200px;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f8ff;
+        }
+
+        .subject-col {
+            font-weight: bold;
+            background-color: #fff;
+        }
+
+        .score-col {
+            font-family: 'Consolas', monospace;
+            color: #d35400;
+        }
+        
+        .empty-msg {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>2025학년도 2학기 학기말 추정분할점수</h1>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="setGrade(1)">1학년</button>
+        <button class="tab-btn" onclick="setGrade(2)">2학년</button>
+    </div>
+
+    <div class="filter-section">
+        <input type="text" id="searchInput" class="search-input" placeholder="과목명 검색..." onkeyup="renderTable()">
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th rowspan="2">교과(군)</th>
+                    <th rowspan="2">과목명</th>
+                    <th rowspan="2">평가영역</th>
+                    <th rowspan="2">반영비율(%)</th>
+                    <th colspan="5">성취수준 분할점수</th>
+                </tr>
+                <tr>
+                    <th>A/B</th>
+                    <th>B/C</th>
+                    <th>C/D</th>
+                    <th>D/E</th>
+                    <th>E/Fail</th>
+                </tr>
+            </thead>
+            <tbody id="scoreTableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // 업로드해주신 CSV 데이터를 기반으로 구성한 JSON 데이터입니다.
+    const rawData = [
+        // === 1학년 데이터 ===
+        { grade: 1, category: "국어", subject: "공통국어2(4)", test: "중간고사", ratio: "30", scores: [61.16, 47.56, 32.8, 18.97, 6.9] },
+        { grade: 1, category: "수학", subject: "공통수학2(4)", test: "중간고사", ratio: "30", scores: [72.55, 54.23, 37.62, 16.85, 2.09] },
+        { grade: 1, category: "수학", subject: "공통수학2(4)", test: "기말고사", ratio: "30", scores: [77.18, 58.87, 39.21, 17.74, 2.28] },
+        { grade: 1, category: "수학", subject: "공통수학2(4)", test: "과정평가(중간)", ratio: "10", scores: [6, 4, 3, 2, 1] },
+
+        // === 2학년 데이터 ===
+        { grade: 2, category: "국어", subject: "문학(3)", test: "중간고사", ratio: "30", scores: [68.1, 54.13, 40.13, 25.72, 13.13] },
+        
+        { grade: 2, category: "수학", subject: "수학Ⅱ(4)", test: "중간고사", ratio: "30", scores: [65.35, 51.95, 37.63, 22.13, 11.66] },
+        
+        { grade: 2, category: "수학", subject: "확률과 통계(3)", test: "중간고사", ratio: "30", scores: [79.58, 65.88, 55.13, 44.63, 33.08] },
+        { grade: 2, category: "수학", subject: "확률과 통계(3)", test: "기말고사", ratio: "30", scores: [68.15, 51.91, 39.95, 29.56, 20.06] },
+        
+        { grade: 2, category: "사회", subject: "한국지리(3)", test: "중간고사", ratio: "30", scores: [69.86, 48.65, 34.45, 24.96, 15.48] },
+        
+        { grade: 2, category: "사회", subject: "세계사(3)", test: "중간고사", ratio: "30", scores: [68.2, 53.2, 37.9, 23.54, 9.21] },
+        { grade: 2, category: "사회", subject: "세계사(3)", test: "기말고사", ratio: "30", scores: [67.21, 52.21, 36.61, 22.45, 8.52] },
+        { grade: 2, category: "사회", subject: "세계사(3)", test: "[수행]전체영역", ratio: "40", scores: [35, 30, 20, 10, 5] },
+        { grade: 2, category: "사회", subject: "세계사(3)", test: "학기말최종", ratio: "-", scores: [76, 62, 42, 24, 10] },
+
+        { grade: 2, category: "사회", subject: "경제(3)", test: "중간고사", ratio: "30", scores: [69.62, 55.35, 41.08, 31.08, "-"] },
+        
+        { grade: 2, category: "사회", subject: "사회·문화(3)", test: "중간고사", ratio: "30", scores: [67.8, 55.15, 42.35, 27.08, "-"] },
+        { grade: 2, category: "사회", subject: "사회·문화(3)", test: "기말고사", ratio: "30", scores: [67.09, 56.44, 44.31, 32.83, "-"] }
+    ];
+
+    let currentGrade = 1;
+
+    function setGrade(grade) {
+        currentGrade = grade;
+        
+        // Update tab buttons
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        tabs[grade - 1].classList.add('active');
+
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('scoreTableBody');
+        const searchText = document.getElementById('searchInput').value.toLowerCase();
+        
+        tbody.innerHTML = '';
+
+        // Filter data by grade and search text
+        const filteredData = rawData.filter(item => {
+            const matchesGrade = item.grade === currentGrade;
+            const matchesSearch = item.subject.toLowerCase().includes(searchText) || 
+                                  item.category.toLowerCase().includes(searchText);
+            return matchesGrade && matchesSearch;
+        });
+
+        if (filteredData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">해당하는 데이터가 없습니다.</td></tr>';
+            return;
+        }
+
+        // Render rows
+        filteredData.forEach(item => {
+            const row = document.createElement('tr');
+            
+            // Handle null/empty scores visually
+            const scores = item.scores.map(s => s === "-" || s === "" ? "-" : s);
+
+            row.innerHTML = `
+                <td>${item.category}</td>
+                <td class="subject-col">${item.subject}</td>
+                <td>${item.test}</td>
+                <td>${item.ratio}</td>
+                <td class="score-col">${scores[0]}</td>
+                <td class="score-col">${scores[1]}</td>
+                <td class="score-col">${scores[2]}</td>
+                <td class="score-col">${scores[3]}</td>
+                <td class="score-col">${scores[4]}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Initial render
+    renderTable();
+</script>
+
+</body>
+</html>
